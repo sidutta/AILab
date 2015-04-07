@@ -10,6 +10,7 @@
 using namespace std;
 
 double weights[str_len][str_len][layers-1];
+double bias[str_len][layers-1];
 
 int input[str_len];               // input that's to be checked
 
@@ -28,7 +29,7 @@ void output(double *input, double *output, int layer) {
     int neurons = str_len;
     if(layer==4) neurons = 1;
     for(int i=0; i<neurons; i++) {
-        double neti = 0;
+        double neti = bias[i][layer-2];
         for(int j=0; j<str_len; j++) {
             neti += input[j] * weights[j][i][layer-2];
         }
@@ -53,34 +54,21 @@ void generate_random_vector(double *vec, int len) {
 void train() {
     int palin = 0;
     int not_palin = 0;
-    int vec[][4] = {{1,1,1,1},{0,0,0,1},{1,0,1,1},{0,1,0,1},{0,0,1,0},{1,0,0,0},{1,1,0,0},{0,1,1,0}};
-    for(int i=0; i<10000000; i++) {
+    
+    int testdata[][4] = {{0,0,0,1},{1,1,1,1},{1,0,1,1},{0,1,0,1},{0,0,1,0},{1,0,0,0},{1,1,0,0},{0,1,1,0}};
+
+    for(int l=0; l<10000000; l++) {
         
         double input[str_len];
-        for(int i=0; i<str_len; i++)
-            input[i] = vec[i%8][i];
-        int expected_output = vec[i%8][3];
-
-        //generate_random_vector(input, str_len);
-        //int expected_output = is_palindrome(input, str_len);
         
-      /*
-         Uncomment to keep no. of palindromes and non-palindromes
-         within a certain range during testing
-         */
-        //        if(expected_output)
-        //            palin++;
-        //        else
-        //            not_palin++;
-        //
-        //        if(abs(palin-not_palin)>1) {
-        //            i--;
-        //            if(expected_output)
-        //                palin--;
-        //            else
-        //                not_palin--;
-        //            continue;
-        //        }
+       /* Uncomment to train using testdata defined above */
+//        for(int i=0; i<str_len; i++)
+//            input[i] = testdata[l%8][i];
+//        int expected_output = testdata[l%8][3];
+
+        /* Uncomment to train using random data */
+        generate_random_vector(input, str_len);
+        int expected_output = is_palindrome(input, str_len);
         
         double hidden_layer_output1[str_len];
         output(input, hidden_layer_output1, 2);
@@ -111,17 +99,20 @@ void train() {
         for(int i=0; i<str_len; i++) {
             weights[i][0][2] += (alpha * final_del * hidden_layer_output2[i]);
         }
+        bias[0][2] += alpha * final_del;
         
         for(int i=0; i<str_len; i++) {
             for(int j=0; j<str_len; j++) {
                 weights[i][j][1] += (alpha * delta2[j] * hidden_layer_output1[i]);
             }
+            bias[i][1] += (alpha * delta2[i]);
         }
         
         for(int i=0; i<str_len; i++) {
             for(int j=0; j<str_len; j++) {
                 weights[i][j][0] += (alpha * delta1[j] * input[i]);
             }
+            bias[i][0] += (alpha * delta1[i]);
         }
     }
     
@@ -143,7 +134,6 @@ bool test(int manual) {
     
     int expected_output = is_palindrome(input, str_len);
     
-    
     double hidden_layer_output1[str_len];
     output(input, hidden_layer_output1, 2);
     
@@ -159,7 +149,7 @@ bool test(int manual) {
         cout<<input[i]<<" ";
     }
     cout<<endl;
-    double threshold = 0.5;
+    double threshold = 0.6;
     cout<<"Result: "<<result[0]<<" ~ "<<(result[0]>threshold)<<endl;
     cout<<"Expected Output: "<<expected_output<<endl;
     
