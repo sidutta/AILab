@@ -14,12 +14,12 @@
 #define alphabets 5        // log(26)
 using namespace std;
 
-double weight1[str_len*alphabets][hidden_layer_neurons];  // weight of arcs from input to hidden layer
-double weight2[hidden_layer_neurons][str_len*grapheme_count];         // weight of arcs from output of hidden layer to output layer
-double weight3[hidden_layer_neurons][str_len*grapheme_count];
+double weight1[str_len*grapheme_count][hidden_layer_neurons];  // weight of arcs from input to hidden layer
+double weight2[hidden_layer_neurons][str_len*alphabets];         // weight of arcs from output of hidden layer to output layer
+double weight3[hidden_layer_neurons][str_len*alphabets];
 
-double bias1[hidden_layer_neurons];
-double bias2[str_len*grapheme_count];
+//double bias1[hidden_layer_neurons];
+//double bias2[str_len*grapheme_count];
 
 //double input[str_len*alphabets];               // input that's to be checked
 //double expected_output[str_len*grapheme_count];               // input that's to be checked
@@ -35,13 +35,13 @@ double sigmoid(double x) {
 }
 
 void initialize_weights() {
-    for(int i=0; i<str_len*alphabets; i++) {
+    for(int i=0; i<str_len*grapheme_count; i++) {
         for(int j=0; j<hidden_layer_neurons; j++) {
             weight1[i][j] = (rand()%100)/100.0 * ((rand()%2) * -1);
         }
     }
     for(int i=0; i<hidden_layer_neurons; i++) {
-        for(int j=0; j<str_len*grapheme_count; j++) {
+        for(int j=0; j<str_len*alphabets; j++) {
             weight2[i][j] = (rand()%100)/100.0 * ((rand()%2) * -1);
         }
     }
@@ -50,22 +50,22 @@ void initialize_weights() {
 void output_from_hidden_layer(double *input, double *output) {
     for(int i=0; i<hidden_layer_neurons; i++) {
         double neti = 0; // -bias1[i];
-        for(int j=0; j<str_len*alphabets; j++) {
+        for(int j=0; j<str_len*grapheme_count; j++) {
             neti += input[j] * weight1[j][i];
         }
         output[i] = sigmoid(neti);
-//        cout<<output[i]<<" "<<neti<<" ";
+        //        cout<<output[i]<<" "<<neti<<" ";
     }
 }
 
 void final_output(double *hidden_layer_output, double *output) {
-    for(int i=0; i<str_len*grapheme_count; i++) {
+    for(int i=0; i<str_len*alphabets; i++) {
         double neti = 0; // -bias2[i];
         for(int j=0; j<hidden_layer_neurons; j++) {
             neti += hidden_layer_output[j] * weight2[j][i];
         }
         output[i] = sigmoid(neti);
-//        cout<<output[i]<<" ";
+        //        cout<<output[i]<<" ";
     }
 }
 
@@ -73,111 +73,63 @@ void train(double *input, double *expected_output) {
     double hidden_layer_output[hidden_layer_neurons];
     output_from_hidden_layer(input, hidden_layer_output);
     
-    double result[str_len*grapheme_count];
+    double result[str_len*alphabets];
     final_output(hidden_layer_output, result);
     
-    double final_del[str_len*grapheme_count];
+    double final_del[str_len*alphabets];
     
-    for(int i=0; i<str_len*grapheme_count; i++) {
+    for(int i=0; i<str_len*alphabets; i++) {
         final_del[i] = (expected_output[i] - result[i]) * result[i] * (1-result[i]);
-//        cout<<result[i];
+        //        cout<<result[i];
     }
-//    cout<<endl;
+    //    cout<<endl;
     
     for(int i=0; i<hidden_layer_neurons; i++) {
-        for(int j=0; j<str_len*grapheme_count; j++) {
+        for(int j=0; j<str_len*alphabets; j++) {
             weight3[i][j] += (alpha * final_del[j] * hidden_layer_output[i]);
         }
     }
     
-//    for(int i=0; i<str_len*grapheme_count; i++) {
-//        bias2[i] = alpha * final_del[i];
-//    }
-    
     for(int i=0; i<hidden_layer_neurons; i++) {
         double del=0;
-        for(int k=0; k<str_len*grapheme_count; k++)
+        for(int k=0; k<str_len*alphabets; k++)
             del += weight2[i][k] * final_del[k] * hidden_layer_output[i] * (1-hidden_layer_output[i]);
-        for(int j=0; j<str_len*alphabets; j++) {
+        for(int j=0; j<str_len*grapheme_count; j++) {
             weight1[j][i] += (alpha * del * input[j]);
             
         }
-//        bias1[i] += alpha * del;
+        //        bias1[i] += alpha * del;
     }
     
     for(int i=0; i<hidden_layer_neurons; i++) {
-        for(int j=0; j<str_len*grapheme_count; j++) {
+        for(int j=0; j<str_len*alphabets; j++) {
             weight2[i][j] = weight3[i][j];
         }
     }
-}
-
-void manual_test() {
-    double *input = new double[str_len*alphabets];
-    string t;
-    while(true) {
-        cout<<"Enter grapheme: ";
-        cin>>t;
-        cout<<"Phoneme is ";
-        for(int i=0; i<str_len; i++) {
-            int mask[alphabets];
-            int alphabet = t[i] - 'A';
-            for(int j=0; j<alphabets; j++) {
-                input[i*alphabets+j] = alphabet%2;
-                alphabet /= 2;
-            }
-        }
-        
-        double hidden_layer_output[hidden_layer_neurons];
-        output_from_hidden_layer(input, hidden_layer_output);
-        
-//        for(int i=0; i<hidden_layer_neurons; i++)
-//            cout<<hidden_layer_output[i]<<" ";
-        
-        double result[str_len*grapheme_count];
-        final_output(hidden_layer_output, result);
-        
-        for(int i=0; i<str_len; i++) {
-            int j;
-            int cal = 0;
-            int pow = 1;
-            for(j=0; j<grapheme_count; j++) {
-                cout<<result[i*str_len+j]<<" ";
-                if(result[i*str_len+j]>0.5)
-                    cal += pow;
-                pow *= 2;
-            }
-            cout<<cal<<reverse_graphemes[cal]<<endl;
-            //cout<<reverse_graphemes[j];
-        }
-        cout<<endl;
-    }
-    delete[] input;
 }
 
 long long total_checks = 0;
 long long correct_ans = 0;
 
 void auto_test(double *input, double *expected_output) {
-//    double *input = new double[str_len*alphabets];
+    //    double *input = new double[str_len*alphabets];
     
-        double hidden_layer_output[hidden_layer_neurons];
-        output_from_hidden_layer(input, hidden_layer_output);
+    double hidden_layer_output[hidden_layer_neurons];
+    output_from_hidden_layer(input, hidden_layer_output);
     
-        double result[str_len*grapheme_count];
-        final_output(hidden_layer_output, result);
-        
-        for(int i=0; i<str_len; i++) {
-            for(int j=0; j<grapheme_count; j++) {
-                total_checks++;
-                if(result[i*str_len+j]>=0.5 && expected_output[i*str_len+j]>=0.5)
-                    correct_ans++;
-                if(result[i*str_len+j]<0.5 && expected_output[i*str_len+j]<0.5)
-                    correct_ans++;
-            }
+    double result[str_len*grapheme_count];
+    final_output(hidden_layer_output, result);
+    
+    for(int i=0; i<str_len; i++) {
+        for(int j=0; j<alphabets; j++) {
+            total_checks++;
+            if(result[i*str_len+j]>=0.5 && expected_output[i*str_len+j]>=0.5)
+                correct_ans++;
+            if(result[i*str_len+j]<0.5 && expected_output[i*str_len+j]<0.5)
+                correct_ans++;
         }
+    }
 }
-
 
 int main() {
     srand(time(NULL));
@@ -196,7 +148,7 @@ int main() {
     //ifstream in("cmudict-0.7b.txt");
     ifstream in("grapheme-phoneme-ann.txt");
     //ofstream out("grapheme-phoneme-ann.txt");
-   
+    
     while(getline(in, s)) {
         int j=0;
         string t = "";
@@ -227,13 +179,13 @@ int main() {
             for(int i=0; i<str_len; i++) {
                 int mask[alphabets];
                 int alphabet = t[i] - 'A';
-//                cout<<t[i]<<" ";
+                //                cout<<t[i]<<" ";
                 for(int j=0; j<alphabets; j++) {
                     temp_input[i*alphabets+j] = alphabet%2;
                     alphabet /= 2;
-//                    cout<<temp_input[i*alphabets+j]<<" ";
+                    //                    cout<<temp_input[i*alphabets+j]<<" ";
                 }
-//                cout<<endl;
+                //                cout<<endl;
             }
             //out<<s<<endl;
             stringstream ss(s);
@@ -241,7 +193,7 @@ int main() {
             ss>>tok;
             i=0;
             while(ss>>tok) {
-//                cout<<tok<<" ";
+                //                cout<<tok<<" ";
                 if(graphemes.find(tok)==graphemes.end()) {
                     cout<<"Error: Token not found";
                 }
@@ -251,16 +203,15 @@ int main() {
                     for(int j=0; j<grapheme_count; j++) {
                         temp_expected_output[i*grapheme_count+j]=token%2;
                         token /= 2;
-//                        cout<<temp_expected_output[i*grapheme_count+j];
+                        //                        cout<<temp_expected_output[i*grapheme_count+j];
                     }
                     i++;
                 }
-//                cout<<endl;
+                //                cout<<endl;
             }
-            inputs.push_back(temp_input);
-            expected_outputs.push_back(temp_expected_output);
+            inputs.push_back(temp_expected_output);
+            expected_outputs.push_back(temp_input);
         }
-        
     }
     //out.close();
     in.close();
@@ -277,15 +228,15 @@ int main() {
             if(j%5==k)
                 auto_test(inputs[j], expected_outputs[j]);
         }
-//        cout<<(double)correct_ans/total_checks<<endl;
-//        cout<<correct_ans<<" "<<total_checks<<endl;
+        //        cout<<(double)correct_ans/total_checks<<endl;
+        //        cout<<correct_ans<<" "<<total_checks<<endl;
         average += (double)correct_ans/total_checks;
         cout<<"Done processing fold "<<k+1<<endl;
         correct_ans = 0;
         total_checks = 0;
         initialize_weights();
     }
-
+    
     cout<<"5-fold croos validation: "<<average*20<<"%"<<endl;
     
     for(int i=0; i<inputs.size(); i++)
