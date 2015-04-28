@@ -22,7 +22,7 @@ void initialize_weights() {
     for(int i=0; i<str_len; i++)
         for(int j=0; j<str_len; j++)
             for(int k=0; k<layers-1; k++)
-                weights[i][j][k] = 0;
+                weights[i][j][k] = ((rand()%100)/100.0)*(rand()%2)*(-1);
 }
 
 void output(double *input, double *output, int layer) {
@@ -55,20 +55,20 @@ void train() {
     int palin = 0;
     int not_palin = 0;
     
-    int testdata[][4] = {{0,0,0,1},{1,1,1,1},{1,0,1,1},{0,1,0,1},{0,0,1,0},{1,0,0,0},{1,1,0,0},{0,1,1,0}};
+    int testdata[][4] = {{1,1,1,1},{1,0,1,1},{0,1,0,1},{1,0,0,0},{1,1,0,0},{0,1,1,0}};
 
     for(int l=0; l<10000000; l++) {
         
         double input[str_len];
         
        /* Uncomment to train using testdata defined above */
-//        for(int i=0; i<str_len; i++)
-//            input[i] = testdata[l%8][i];
-//        int expected_output = testdata[l%8][3];
+       for(int i=0; i<str_len; i++)
+           input[i] = testdata[l%6][i];
+       int expected_output = testdata[l%6][3];
 
         /* Uncomment to train using random data */
-        generate_random_vector(input, str_len);
-        int expected_output = is_palindrome(input, str_len);
+        // generate_random_vector(input, str_len);
+        // int expected_output = is_palindrome(input, str_len);
         
         double hidden_layer_output1[str_len];
         output(input, hidden_layer_output1, 2);

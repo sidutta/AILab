@@ -30,7 +30,7 @@ isinp(xin2).
 isout(go1o).
 
 signal(adin1,1).
-signal(adin2,0).
+signal(adin2,1).
 signal(adin3,1).
 isinp(adin1).
 isinp(adin2).
